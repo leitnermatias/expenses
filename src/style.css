@@ -1,0 +1,99 @@
+:root {
+  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+
+  color: #0f0f0f;
+  background-color: #f6f6f6;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+
+  --colorOne: #90c8f3;
+  --colorTwo: #cfeafa;
+  --colorThree: #a6cffbea;
+  --colorFour: #2587f7;
+  --colorFive: #232c56;
+  --colorSix: #000000;
+  --background: #00162470;
+}
+
+body {
+  background-color: var(--background);
+  margin: 0px;
+  padding: 0px;
+  width: 100vw;
+  height: 100vh;
+}
+
+#app {
+  height: 100%;
+}
+
+table {
+  background-color: var(--colorOne);
+  padding: 0px;
+  font-size: 14px;
+  width: 100%;
+  margin: 0px;
+}
+
+td, th {
+  border: 1px solid var(--colorFive);
+  padding: 5px;
+  text-align: center;
+}
+
+tbody > tr:hover, tbody> tr:nth-child(odd) {
+  background-color: var(--colorTwo);
+}
+
+button {
+  width: fit-content;
+  padding: 5px;
+  cursor: pointer;
+  border: 1px solid black;
+  font-size: 14px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+button:hover {
+  background-color: white;
+}
+
+input, select {
+  border-radius: 0%;
+  border: 1px solid var(--colorOne)
+}
+
+input:hover, select:hover {
+  border: 1px solid var(--colorSix)
+}
+
+input:focus, select:focus {
+  outline: none;
+  border: 1px solid var(--colorSix)
+}
+
+label {
+  font-size: 14px;
+  color: var(--colorSix)
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+    margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
+
+input[type=number] {
+    -moz-appearance:textfield; /* Firefox */
+}

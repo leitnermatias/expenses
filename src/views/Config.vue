@@ -1,0 +1,136 @@
+<template>
+    <Panel>
+        <div class="widget">
+            <h3>Currency</h3>
+            <Table :columns="['Name', 'Symbol', 'Actions']">
+                <template #body>
+                    <tr>
+                        <td>
+                            <Field v-model="activeCurrency.name" />
+                        </td>
+                        <td>
+                            <Field v-model="activeCurrency.symbol" />
+                        </td>
+                        <td>
+                            <v-icon @click="addCurrency" class="icon" name="fa-plus" :scale="0.8"></v-icon>
+                        </td>
+                    </tr>
+                    <tr v-for="currency in currencies">
+                        <td>
+                            <input v-if="currency.editing?.active" v-model="currency.editing.value.name" type="text">
+                            <span v-else>{{currency.name}}</span>
+                        </td>
+                        <td>
+                            <input v-if="currency.editing?.active" v-model="currency.editing.value.symbol" type="text">
+                            <span v-else>{{currency.symbol}}</span>
+                        </td>
+                        <td>
+                            <div class="edit-panel" v-if="currency.editing?.active">
+                                <button @click="cancelEdit(currency)" class="dropdown-item"><v-icon name="fa-times" scale="0.8"/> Cancel</button>
+                                <button class="dropdown-item"><v-icon name="fa-check" scale="0.8"/> Save</button>
+                            </div>
+                            <Dropdown v-else label="Select">
+                                <div @click="enableEdit(currency)" class="dropdown-item"><v-icon name="fa-edit" scale="0.8"/> Edit</div>
+                                <div @click="deleteCurrency(currency.id!)" class="dropdown-item"><v-icon name="fa-trash" scale="0.8"/> Delete</div>
+                            </Dropdown>
+                        </td>
+                    </tr>
+                </template>
+            </Table>
+        </div>
+    </Panel>
+</template>
+
+<script setup lang="ts">
+import { onMounted, ref } from 'vue';
+import Panel from '../components/Panel.vue';
+import Table from '../components/Table.vue';
+import Field from '../components/Field.vue';
+import Dropdown from '../components/Dropdown.vue';
+import { selectAndFilter, remove } from '../service/database';
+import { Currency } from '../types';
+import {store} from "../globals";
+
+const currencies = ref<Currency[]>([])
+const activeCurrency = ref<Currency>({
+    name: "",
+    symbol: "",
+})
+
+onMounted(async () => {
+    await getCurrencies();
+})
+
+async function getCurrencies() {
+    const currencyQuery = selectAndFilter(
+        'currency',
+        ['*']
+    )
+
+    currencies.value = await store.db!.select<Currency[]>(currencyQuery) || [];
+    currencies.value.forEach(currency => currency.editing = {active: false, value: {name: currency.name, symbol: currency.symbol}})
+}
+
+async function addCurrency() {
+    const newCurrency: Currency = {
+        name: activeCurrency.value.name,
+        symbol: activeCurrency.value.symbol
+    }
+
+    await store.db!.execute(`
+        INSERT INTO currency VALUES (?1, ?2, ?3)
+    `,
+    [
+        null,
+        newCurrency.name,
+        newCurrency.symbol,
+    ])
+
+    await getCurrencies();
+}
+
+async function deleteCurrency(id: number) {
+    const deleteQuery = remove('currency', id);
+
+    await store.db!.execute(deleteQuery);
+    await getCurrencies();
+}
+
+async function enableEdit(currency: Currency) {
+    currency.editing!.active = true;
+}
+
+async function cancelEdit(currency: Currency) {
+    currency.editing!.active = false;
+    currency.editing!.value = {
+        name: currency.name,
+        symbol: currency.symbol
+    }
+}
+
+</script>
+
+<style scoped>
+.widget {
+    width: 50%;
+    height: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: var(--colorThree);
+    border: 1px solid var(--colorFour);
+}
+
+.widget > h3 {
+    width: 100%;
+    text-align: center;
+    border-bottom: 1px solid var(--colorFive);
+    background-color: var(--colorOne);
+    margin: 0px;
+    margin-bottom: 10px;
+}
+
+.icon {
+    cursor: pointer;
+}
+</style>
