@@ -56,7 +56,7 @@
                             <option v-for="currency in currencies" :value="currency.id">{{currency.name}}</option>
                         </select>
                     </td>
-                    <td><b>$</b> <input v-model="activeTransaction.cost" type="number"></td>
+                    <td><b>{{getSymbol(currencies, activeTransaction.currency)}}</b> <input v-model="activeTransaction.cost" type="number"></td>
                     <td>
                         <v-icon @click="addTransaction" class="icon" name="fa-plus" :scale="0.8"></v-icon>
                     </td>
@@ -80,9 +80,14 @@
                         <span v-else>{{TransactionType[transaction.type]}}</span>
                     </td>
                     <td>{{transaction.created}}</td>
-                    <td>{{currencies.filter(currency => currency.id === transaction.currency)[0].symbol}}</td>
                     <td>
-                        <b>$ </b>
+                        <select v-if="transaction.editing?.active" v-model="transaction.editing!.value.currency">
+                            <option v-for="currency in currencies" :value="currency.id">{{currency.name}}</option>
+                        </select>
+                        <span v-else>{{getSymbol(currencies, transaction.currency)}}</span>
+                    </td>
+                    <td>
+                        <b>{{getSymbol(currencies, transaction.editing?.active ? transaction.editing?.value.currency : transaction.currency)}} </b>
                         <input v-if="transaction.editing?.active" v-model="transaction.editing.value.cost" type="number">
                         <span v-else>{{transaction.cost}}</span>
                     </td>
@@ -225,6 +230,7 @@ function enableEdit(transaction: Transaction) {
         cost: transaction.cost,
         type: transaction.type,
         topic: transaction.topic,
+        currency: transaction.currency,
     };
 }
 
@@ -255,6 +261,18 @@ async function updateTransaction(transaction: Transaction) {
     ])
 
     transaction.editing!.active = false;
+}
+
+function getSymbol(values?: Currency[], id?: number): string {
+
+    if (id && values) {
+        const val = values.filter(val => val.id === id);
+        if (val.length > 0) {
+            return val[0].symbol
+        }
+    }
+
+    return "";
 }
 
 

@@ -27,7 +27,7 @@
                         <td>
                             <div class="edit-panel" v-if="currency.editing?.active">
                                 <button @click="cancelEdit(currency)" class="dropdown-item"><v-icon name="fa-times" scale="0.8"/> Cancel</button>
-                                <button class="dropdown-item"><v-icon name="fa-check" scale="0.8"/> Save</button>
+                                <button @click="updateCurrency(currency)" class="dropdown-item"><v-icon name="fa-check" scale="0.8"/> Save</button>
                             </div>
                             <Dropdown v-else label="Select">
                                 <div @click="enableEdit(currency)" class="dropdown-item"><v-icon name="fa-edit" scale="0.8"/> Edit</div>
@@ -49,7 +49,7 @@ import Field from '../components/Field.vue';
 import Dropdown from '../components/Dropdown.vue';
 import { selectAndFilter, remove } from '../service/database';
 import { Currency } from '../types';
-import {store} from "../globals";
+import {store, getName} from "../globals";
 
 const currencies = ref<Currency[]>([])
 const activeCurrency = ref<Currency>({
@@ -72,21 +72,23 @@ async function getCurrencies() {
 }
 
 async function addCurrency() {
-    const newCurrency: Currency = {
-        name: activeCurrency.value.name,
-        symbol: activeCurrency.value.symbol
+    if (activeCurrency.value.name && activeCurrency.value.symbol) {
+        const newCurrency: Currency = {
+            name: activeCurrency.value.name,
+            symbol: activeCurrency.value.symbol
+        }
+    
+        await store.db!.execute(`
+            INSERT INTO currency VALUES (?1, ?2, ?3)
+        `,
+        [
+            null,
+            newCurrency.name,
+            newCurrency.symbol,
+        ])
+    
+        await getCurrencies();
     }
-
-    await store.db!.execute(`
-        INSERT INTO currency VALUES (?1, ?2, ?3)
-    `,
-    [
-        null,
-        newCurrency.name,
-        newCurrency.symbol,
-    ])
-
-    await getCurrencies();
 }
 
 async function deleteCurrency(id: number) {
@@ -108,17 +110,39 @@ async function cancelEdit(currency: Currency) {
     }
 }
 
+async function updateCurrency(currency: Currency) {
+    if (currency.editing!.value.name && currency.editing!.value.symbol) {
+        currency.name = currency.editing!.value.name;
+        currency.symbol = currency.editing!.value.symbol;
+    
+        await store.db!.execute(`
+            UPDATE currency SET
+            name = ?1,
+            symbol = ?2
+            WHERE id = ?3
+        `,
+        [
+            currency.name,
+            currency.symbol,
+            currency.id
+        ])
+
+        await getCurrencies();
+    }
+}
+
 </script>
 
 <style scoped>
 .widget {
     width: 50%;
-    height: 50%;
+    max-height: 50%;
     display: flex;
     flex-direction: column;
     align-items: center;
     background-color: var(--colorThree);
     border: 1px solid var(--colorFour);
+    overflow-y: auto;
 }
 
 .widget > h3 {
