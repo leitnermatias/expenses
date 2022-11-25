@@ -1,5 +1,5 @@
 <template>
-    <Panel>
+    <Panel id="container">
         <div class="widget">
             <h3>Currency</h3>
             <Table :columns="['Name', 'Symbol', 'Actions']">
@@ -38,6 +38,25 @@
                 </template>
             </Table>
         </div>
+        <div class="widget">
+            <h3>Topics</h3>
+            <Table :columns="['Name', 'State', 'Actions']">
+                <template #body>
+                    <tr>
+                        <td><Field v-model="activeTopic.name"/></td>
+                        <td>
+                            <select v-model="activeTopic.state">
+                                <option :value="TopicState.ACTIVE">Active</option>
+                                <option :value="TopicState.DISABLED">Disabled</option>
+                            </select>
+                        </td>
+                        <td>
+                            <v-icon class="icon" name="fa-plus" :scale="0.8"></v-icon>
+                        </td>
+                    </tr>
+                </template>
+            </Table>
+        </div>
     </Panel>
 </template>
 
@@ -48,7 +67,7 @@ import Table from '../components/Table.vue';
 import Field from '../components/Field.vue';
 import Dropdown from '../components/Dropdown.vue';
 import { selectAndFilter, remove } from '../service/database';
-import { Currency } from '../types';
+import { Currency, Topic, TopicState } from '../types';
 import {store} from "../globals";
 
 const currencies = ref<Currency[]>([])
@@ -56,6 +75,11 @@ const activeCurrency = ref<Currency>({
     name: "",
     symbol: "",
 })
+const activeTopic = ref<Topic>({
+    name: "",
+    state: TopicState.ACTIVE
+})
+
 
 onMounted(async () => {
     await getCurrencies();
@@ -134,8 +158,14 @@ async function updateCurrency(currency: Currency) {
 </script>
 
 <style scoped>
+
+#container {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
 .widget {
-    width: 50%;
+    width: 45%;
     max-height: 50%;
     display: flex;
     flex-direction: column;

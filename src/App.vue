@@ -1,13 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { RouterLink, RouterView } from 'vue-router';
+import { RouterView } from 'vue-router';
 import { store } from "./globals";
 import SQLite from "tauri-plugin-sqlite-api";
 import Navbar from "./components/Navbar.vue";
-
-let showNav = ref(true);
-
-let db = ref<SQLite | null>(null);
 
 onMounted(async () => {
   try {
@@ -56,10 +52,7 @@ onMounted(async () => {
       :routes="[
         {name: 'Home', path: '/', iconName: 'fa-home'},
         {name: 'Transactions', path: '/transactions', iconName: 'fa-money-bill-wave'},
-        {name: 'Configuration', path: '/config', iconName: 'fa-toolbox', 
-        subRoutes: [
-          {name: 'Topics', path: '/topics', iconName: 'fa-scroll'}
-        ]},
+        {name: 'Configuration', path: '/config', iconName: 'fa-toolbox'},
       ]"
     />
     
