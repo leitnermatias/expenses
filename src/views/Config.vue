@@ -49,7 +49,7 @@ import Field from '../components/Field.vue';
 import Dropdown from '../components/Dropdown.vue';
 import { selectAndFilter, remove } from '../service/database';
 import { Currency } from '../types';
-import {store, getName} from "../globals";
+import {store} from "../globals";
 
 const currencies = ref<Currency[]>([])
 const activeCurrency = ref<Currency>({
