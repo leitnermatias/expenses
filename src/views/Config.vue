@@ -66,7 +66,7 @@ import Panel from '../components/Panel.vue';
 import Table from '../components/Table.vue';
 import Field from '../components/Field.vue';
 import Dropdown from '../components/Dropdown.vue';
-import { selectAndFilter, remove } from '../service/database';
+import { selectAndFilter, remove, add } from '../service/database';
 import { Currency, Topic, TopicState } from '../types';
 import {store} from "../globals";
 
@@ -101,10 +101,10 @@ async function addCurrency() {
             name: activeCurrency.value.name,
             symbol: activeCurrency.value.symbol
         }
-    
-        await store.db!.execute(`
-            INSERT INTO currency VALUES (?1, ?2, ?3)
-        `,
+
+        const addQuery = add('currency', 3)
+
+        await store.db!.execute(addQuery,
         [
             null,
             newCurrency.name,
