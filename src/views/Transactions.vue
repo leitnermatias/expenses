@@ -57,7 +57,9 @@
                         </select>
                     </td>
                     <td><b>$</b> <input v-model="activeTransaction.cost" type="number"></td>
-                    <td><button @click="addTransaction">Add Transaction</button></td>
+                    <td>
+                        <v-icon @click="addTransaction" class="icon" name="fa-plus" :scale="0.8"></v-icon>
+                    </td>
                 </tr>
                 <tr v-for="transaction in transactions">
                     <td>
