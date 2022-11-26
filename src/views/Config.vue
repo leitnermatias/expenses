@@ -51,7 +51,20 @@
                             </select>
                         </td>
                         <td>
-                            <v-icon class="icon" name="fa-plus" :scale="0.8"></v-icon>
+                            <v-icon @click="addTopic" class="icon" name="fa-plus" :scale="0.8"></v-icon>
+                        </td>
+                    </tr>
+                    <tr v-for="topic in topics">
+                        <td>
+                            <span>{{topic.name}}</span>
+                        </td>
+                        <td>
+                            <span>{{TopicState[topic.state]}}</span>
+                        </td>
+                        <td>
+                            <Dropdown label="Select">
+                                <div @click="deleteTopic(topic)" class="dropdown-item"><v-icon name="fa-trash" scale="0.8"/> Delete</div>
+                            </Dropdown>
                         </td>
                     </tr>
                 </template>
@@ -66,11 +79,12 @@ import Panel from '../components/Panel.vue';
 import Table from '../components/Table.vue';
 import Field from '../components/Field.vue';
 import Dropdown from '../components/Dropdown.vue';
-import { selectAndFilter, remove, add } from '../service/database';
+import { selectAndFilter, remove, add, update } from '../service/database';
 import { Currency, Topic, TopicState } from '../types';
 import {store} from "../globals";
 
 const currencies = ref<Currency[]>([])
+const topics = ref<Topic[]>([]);
 const activeCurrency = ref<Currency>({
     name: "",
     symbol: "",
@@ -83,6 +97,7 @@ const activeTopic = ref<Topic>({
 
 onMounted(async () => {
     await getCurrencies();
+    await getTopics();
 })
 
 async function getCurrencies() {
@@ -93,6 +108,15 @@ async function getCurrencies() {
 
     currencies.value = await store.db!.select<Currency[]>(currencyQuery) || [];
     currencies.value.forEach(currency => currency.editing = {active: false, value: {name: currency.name, symbol: currency.symbol}})
+}
+
+async function getTopics() {
+    const query = selectAndFilter(
+        'topics',
+        ['*']
+    )
+
+    topics.value = await store.db!.select<Topic[]>(query);
 }
 
 async function addCurrency() {
@@ -138,21 +162,51 @@ async function updateCurrency(currency: Currency) {
     if (currency.editing!.value.name && currency.editing!.value.symbol) {
         currency.name = currency.editing!.value.name;
         currency.symbol = currency.editing!.value.symbol;
-    
-        await store.db!.execute(`
-            UPDATE currency SET
-            name = ?1,
-            symbol = ?2
-            WHERE id = ?3
-        `,
+        
+        const updateQuery = update(
+            'currency',
+            ['name', 'symbol'],
+            currency.id!
+        )
+
+        await store.db!.execute(updateQuery,
         [
             currency.name,
             currency.symbol,
-            currency.id
         ])
 
         await getCurrencies();
     }
+}
+
+async function addTopic() {
+    if (activeTopic.value.name && activeTopic.value.state) {
+        const newTopic: Topic = {
+            name: activeTopic.value.name,
+            state: activeTopic.value.state
+        } 
+
+        const addQuery = add('topics', 3);
+
+        await store.db!.execute(
+            addQuery,
+            [
+                null,
+                newTopic.name,
+                newTopic.state
+            ]
+        )
+
+        await getTopics()
+    }
+}
+
+async function deleteTopic(topic: Topic) {
+    const deleteQuery = remove('topics', topic.id!);
+
+    await store.db!.execute(deleteQuery);
+
+    await getTopics();
 }
 
 </script>

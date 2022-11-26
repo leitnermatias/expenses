@@ -40,3 +40,20 @@ export function add(
 
     return queryString;
 }
+
+export function update(
+    tableName: string,
+    columnNames: string[],
+    id: number
+) {
+    let columnString = ""
+
+    columnNames.forEach((name, index) => {
+        columnString += 
+        index === columnNames.length - 1 ?
+        `${name} = ?${index + 1}`
+        : `${name} = ?${index + 1}, `
+    })
+
+    return `UPDATE ${tableName} SET ${columnString} WHERE id = '${id}';`
+}

@@ -12,7 +12,6 @@ onMounted(async () => {
       CREATE TABLE IF NOT EXISTS topics (
         id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
-        created TEXT NOT NULL,
         state TEXT NOT NULL
       )
     `)
