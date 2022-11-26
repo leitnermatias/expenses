@@ -63,6 +63,7 @@
                         </td>
                         <td>
                             <Dropdown label="Select">
+                                <div @click="transitionTopic(topic)" class="dropdown-item"><v-icon name="fa-check" scale="0.8"/> Transition</div>
                                 <div @click="deleteTopic(topic)" class="dropdown-item"><v-icon name="fa-trash" scale="0.8"/> Delete</div>
                             </Dropdown>
                         </td>
@@ -180,7 +181,7 @@ async function updateCurrency(currency: Currency) {
 }
 
 async function addTopic() {
-    if (activeTopic.value.name && activeTopic.value.state) {
+    if (activeTopic.value.name) {
         const newTopic: Topic = {
             name: activeTopic.value.name,
             state: activeTopic.value.state
@@ -207,6 +208,24 @@ async function deleteTopic(topic: Topic) {
     await store.db!.execute(deleteQuery);
 
     await getTopics();
+}
+
+async function transitionTopic(topic: Topic) {
+    const updateQuery = update(
+        'topics',
+        ['state'],
+        topic.id!
+    )
+
+    await store.db!.execute(
+        updateQuery,
+        [
+            topic.state == 0 ? 1 : 0
+        ]
+    )
+
+    await getTopics();
+
 }
 
 </script>
