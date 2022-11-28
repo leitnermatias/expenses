@@ -40,7 +40,7 @@ export function remove(
 
 export function add(
     tableName: string,
-    values: (string | number | null)[]
+    values: (string | number | null | undefined)[]
 ): Query {
     let valuesString = ""
 
@@ -58,7 +58,7 @@ export function add(
 
 export function update(
     tableName: string,
-    columns: {name: string, value: string | number}[],
+    columns: {name: string, value: string | number | undefined | null}[],
     id: number
 ): Query {
     let columnString = ""

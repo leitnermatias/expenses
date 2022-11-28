@@ -118,7 +118,7 @@ import { onMounted, ref } from 'vue';
 import {Currency, Transaction, TransactionType} from "../types";
 import {format} from "date-fns";
 import {store} from "../globals";
-import { selectAndFilter } from '../service/database';
+import { selectAndFilter, dbCall, add, remove, update } from '../service/database';
 
 const transactions = ref<Transaction[]>([]);
 const topics = ref<{name: string, id: number}[]>([]);
@@ -170,10 +170,10 @@ async function getTransactions(search?: string, topicId?: number, typeId?: numbe
                 {column: 'name', connector: 'LIKE', value: search && search !== '' ? `%${search}%` : undefined},
             ]
         )
-                
-        topics.value = await store.db!.select<Array<{name: string, id: number}>>(topicsQuery) || [];
-        transactions.value = await store.db!.select<Transaction[]>(transactionsQuery) || [];
-        currencies.value = await store.db!.select<Currency[]>(currencyQuery) || [];
+        
+        topics.value = await dbCall<{name: string, id: number}[]>(topicsQuery, store.db) || []
+        transactions.value = await dbCall<Transaction[]>(transactionsQuery, store.db) || []
+        currencies.value = await dbCall<Currency[]>(currencyQuery, store.db) || []
 
         transactions.value.forEach(transaction => transaction.editing = {active: false, value: transaction})
         dates.value = [...new Set(transactions.value.map(transaction => transaction.created!))];
@@ -192,10 +192,11 @@ async function addTransaction() {
             currency: activeTransaction.value.currency,
             created: format(new Date(), "dd/MM/yyyy")
         }
-        try {
-            await store.db!.execute("INSERT INTO transactions VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)", 
+
+        const query = add(
+            'transactions',
             [
-                null, 
+                null,
                 newTransaction.name, 
                 newTransaction.created, 
                 newTransaction.cost, 
@@ -203,24 +204,21 @@ async function addTransaction() {
                 newTransaction.topic,
                 newTransaction.currency
             ]
-            )
-            await getTransactions();
-        } catch (e) {
-            alert(e)
-        }
+        )
+
+        await dbCall(query, store.db);
+
+        await getTransactions();
     }
 }
 
 async function deleteTransaction(id: number) {
-    try {
-        await store.db!.execute(`
-            DELETE FROM transactions WHERE id = ?
-        `, [id])
 
-        await getTransactions();
-    } catch (error) {
-        alert(error)
-    }
+    const query = remove('transactions', id);
+
+    await dbCall(query, store.db);
+
+    await getTransactions()
 }
 
 function enableEdit(transaction: Transaction) {
@@ -244,21 +242,20 @@ async function updateTransaction(transaction: Transaction) {
     transaction.type = transaction.editing!.value.type;
     transaction.topic = transaction.editing!.value.topic;
     transaction.cost = transaction.editing!.value.cost;
+    transaction.currency = transaction.editing!.value.currency;
 
-    await store.db!.execute(`
-        UPDATE transactions SET 
-        name = ?1,
-        cost = ?2,
-        type = ?3,
-        topic = ?4
-        WHERE id = ?5;
-    `, [
-        transaction.editing?.value.name, 
-        transaction.editing?.value.cost, 
-        transaction.editing?.value.type,
-        transaction.editing?.value.topic,
-        transaction.id
-    ])
+    const query = update(
+        'transactions',
+        [
+            {name: 'name', value: transaction.editing?.value.name},
+            {name: 'cost', value: transaction.editing?.value.cost},
+            {name: 'type', value: transaction.editing?.value.type},
+            {name: 'topic', value: transaction.editing?.value.topic},
+            {name: 'currency', value: transaction.editing?.value.currency}
+        ],transaction.id!
+    )
+
+    await dbCall(query, store.db)
 
     transaction.editing!.active = false;
 }
