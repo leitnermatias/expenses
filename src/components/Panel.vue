@@ -13,6 +13,7 @@ div {
     border: 1px solid white;
     height: 100%;
     padding: 5px;
-    background-color: var(--colorTwo)
+    background-color: var(--colorTwo);
+    overflow: auto
 }
 </style>
