@@ -4,10 +4,25 @@ import { RouterView } from 'vue-router';
 import { store } from "./globals";
 import SQLite from "tauri-plugin-sqlite-api";
 import Navbar from "./components/Navbar.vue";
+import {exists, BaseDirectory, writeBinaryFile, createDir} from "@tauri-apps/api/fs";
+import {appDir} from "@tauri-apps/api/path";
 
 onMounted(async () => {
   try {
-    store.db = await SQLite.open("./main.sqlite");
+    const dbExists = await exists('main.sqlite', {dir: BaseDirectory.App}) as unknown as boolean;
+    const baseDirExists = await exists('', {dir: BaseDirectory.App}) as unknown as boolean;
+
+    if (!baseDirExists) {
+      await createDir('', {dir: BaseDirectory.App});
+    }
+
+    if (!dbExists) {
+      await writeBinaryFile('main.sqlite', new Uint8Array([]),{dir: BaseDirectory.App});
+    }
+
+    const appDirPath = await appDir();
+
+    store.db = await SQLite.open(appDirPath + "/main.sqlite");
     await store.db.execute(`
       CREATE TABLE IF NOT EXISTS topics (
         id INTEGER PRIMARY KEY,
