@@ -1,8 +1,21 @@
+import SQLite from "tauri-plugin-sqlite-api";
+
+export enum QueryType {
+    SELECT,
+    EXECUTE
+}
+
+export type Query = {
+    type: QueryType,
+    value: string
+}
+
+
 export function selectAndFilter(
     tableName: string,
     columns: string[],
     filters?: {column: string, value?: string | number, connector: string}[]
-    ): string {
+    ): Query {
     let queryString = `SELECT ${columns.join(',')} FROM ${tableName}`;
     
     if (filters) {
@@ -14,46 +27,72 @@ export function selectAndFilter(
         })
     }
 
-    return queryString;
+    return {type: QueryType.SELECT, value: queryString};
 }
 
 export function remove(
     tableName: string,
     id: number
-): string {
+): Query {
     //TODO: implement filter
-    return `DELETE FROM ${tableName} WHERE id = '${id}'`
+    return {type: QueryType.EXECUTE, value: `DELETE FROM ${tableName} WHERE id = '${id}'`}
 }
 
 export function add(
     tableName: string,
-    valuesLength: number
-) {
+    values: (string | number | null)[]
+): Query {
     let valuesString = ""
 
-    Array.from({length: valuesLength}, (x, i) => i + 1)
-    .forEach(i => {
-        valuesString += i === valuesLength ? `?${i}` : `?${i}, `
+    values.forEach((value, index) => {
+        const wrapString = typeof value === 'string'
+        valuesString += index === values.length - 1 ? 
+        `${wrapString ? '\'' : ''}${value}${wrapString ? '\'' : ''}` 
+        : `${wrapString ? '\'' : ''}${value}${wrapString ? '\'' : ''}, `
     })
 
     let queryString = `INSERT INTO ${tableName} VALUES (${valuesString})`
 
-    return queryString;
+    return {type: QueryType.EXECUTE, value: queryString};
 }
 
 export function update(
     tableName: string,
-    columnNames: string[],
+    columns: {name: string, value: string | number}[],
     id: number
-) {
+): Query {
     let columnString = ""
 
-    columnNames.forEach((name, index) => {
+    columns.forEach((column, index) => {
+        const wrapString = typeof column.value === 'string';
         columnString += 
-        index === columnNames.length - 1 ?
-        `${name} = ?${index + 1}`
-        : `${name} = ?${index + 1}, `
+        index === columns.length - 1 ?
+        `${column.name} = ${wrapString ? '\'' : ''}${column.value}${wrapString ? '\'' : ''}`
+        : `${column.name} = ${wrapString ? '\'' : ''}${column.value}${wrapString ? '\'' : ''}, `
     })
 
-    return `UPDATE ${tableName} SET ${columnString} WHERE id = '${id}';`
+    return {type: QueryType.EXECUTE, value: `UPDATE ${tableName} SET ${columnString} WHERE id = '${id}';`}
+}
+
+export async function dbCall<T>(query: Query, db?: SQLite | null): Promise<T | undefined> {
+    if (db) {
+        try {
+            if (query.type == QueryType.EXECUTE) {
+                await db.execute(query.value);
+            }
+
+            if (query.type == QueryType.SELECT) {
+                const queryResult: T = await db.select<T>(query.value);
+                return queryResult;
+            }
+        } catch (error) {
+            alert(`
+                Error: ${error}
+                Query: ${query.value}
+            `)
+        }
+    } else {
+        alert('Error trying to reach database')
+    }
+
 }

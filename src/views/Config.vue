@@ -80,7 +80,7 @@ import Panel from '../components/Panel.vue';
 import Table from '../components/Table.vue';
 import Field from '../components/Field.vue';
 import Dropdown from '../components/Dropdown.vue';
-import { selectAndFilter, remove, add, update } from '../service/database';
+import { selectAndFilter, remove, add, update, dbCall} from '../service/database';
 import { Currency, Topic, TopicState } from '../types';
 import {store} from "../globals";
 
@@ -107,7 +107,7 @@ async function getCurrencies() {
         ['*']
     )
 
-    currencies.value = await store.db!.select<Currency[]>(currencyQuery) || [];
+    currencies.value = await dbCall<Currency[]>(currencyQuery, store.db) || [];
     currencies.value.forEach(currency => currency.editing = {active: false, value: {name: currency.name, symbol: currency.symbol}})
 }
 
@@ -117,7 +117,7 @@ async function getTopics() {
         ['*']
     )
 
-    topics.value = await store.db!.select<Topic[]>(query);
+    topics.value = await dbCall<Topic[]>(query, store.db) || [];
 }
 
 async function addCurrency() {
@@ -127,14 +127,16 @@ async function addCurrency() {
             symbol: activeCurrency.value.symbol
         }
 
-        const addQuery = add('currency', 3)
+        const addQuery = add(
+            'currency',
+            [
+                null,
+                newCurrency.name,
+                newCurrency.symbol
+            ]
+        )
 
-        await store.db!.execute(addQuery,
-        [
-            null,
-            newCurrency.name,
-            newCurrency.symbol,
-        ])
+        await dbCall(addQuery, store.db)
     
         await getCurrencies();
     }
@@ -143,7 +145,7 @@ async function addCurrency() {
 async function deleteCurrency(id: number) {
     const deleteQuery = remove('currency', id);
 
-    await store.db!.execute(deleteQuery);
+    await dbCall(deleteQuery, store.db);
     await getCurrencies();
 }
 
@@ -166,15 +168,14 @@ async function updateCurrency(currency: Currency) {
         
         const updateQuery = update(
             'currency',
-            ['name', 'symbol'],
+            [
+                {name: 'name', value: currency.name},
+                {name: 'symbol', value: currency.symbol}
+            ],
             currency.id!
         )
 
-        await store.db!.execute(updateQuery,
-        [
-            currency.name,
-            currency.symbol,
-        ])
+        await dbCall(updateQuery, store.db);
 
         await getCurrencies();
     }
@@ -187,16 +188,16 @@ async function addTopic() {
             state: activeTopic.value.state
         } 
 
-        const addQuery = add('topics', 3);
-
-        await store.db!.execute(
-            addQuery,
+        const addQuery = add(
+            'topics',
             [
                 null,
                 newTopic.name,
-                newTopic.state
+                newTopic.state.toString()
             ]
-        )
+        );
+
+        await dbCall(addQuery, store.db)
 
         await getTopics()
     }
@@ -205,7 +206,7 @@ async function addTopic() {
 async function deleteTopic(topic: Topic) {
     const deleteQuery = remove('topics', topic.id!);
 
-    await store.db!.execute(deleteQuery);
+    await dbCall(deleteQuery, store.db);
 
     await getTopics();
 }
@@ -213,16 +214,13 @@ async function deleteTopic(topic: Topic) {
 async function transitionTopic(topic: Topic) {
     const updateQuery = update(
         'topics',
-        ['state'],
+        [
+            {name: 'state', value: topic.state == 0 ? 1 : 0}
+        ],
         topic.id!
     )
 
-    await store.db!.execute(
-        updateQuery,
-        [
-            topic.state == 0 ? 1 : 0
-        ]
-    )
+    await dbCall(updateQuery, store.db)
 
     await getTopics();
 
